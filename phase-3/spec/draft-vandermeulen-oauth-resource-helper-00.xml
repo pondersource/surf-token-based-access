@@ -102,6 +102,53 @@
     <section>
       <name>Viewing Access Token Scopes</name>
       <t>
+      During the Authorization Code Flow, the Authorization Server can redirect the
+      user to the Resource Helper to view the access token scope before continuing.
+      </t>
+      <artwork type="ascii-art">
+        <![CDATA[
+    +-------------+
+    |  Resource   |
+    |    Owner    |
+    +-------------+
+        ^      ^
+        |      |
+        |      |
+    +---|------|-+
+    |   |      | |                                  +---------------+
+    |   |    .-+----------------------------------->|   Resource    |
+    |   |    | '-------(4)-- User views scope ----->|    Helper     |
+    |   |    |  .------(5)-- Redirect back to AS --<|               |
+    |   |    |  | |                                 +---------------+
+    |   |    |  | |
+    |   |    |  | |                                 +---------------+
+    |   |    |  '---------------------------------->|               |
+    |   |    |    |                                 |               |
+    |   |    '---------(3)-- Redirect to RH -------<|               |
+    |   |         |                                 |               |
+    |   |         |          Client Identifier      |               |
+    | .-+--------------(1)-- & Redirect URI ------->|               |
+    | | |         |                                 |               |
+    | | '--------------(2)-- User authenticates --->|               |
+    | | User-     |                                 | Authorization |
+    | | Agent     |                                 |     Server    |
+    | |           |                                 |               |
+    | |       .--------(6)-- Authorization Code ---<|               |
+    +-|--   --|---+                                 +---------------+
+      |    |                                         ^      v
+      |    |                                         |      |
+      ^    v                                         |      |
+    +---------+                                      |      |
+    |         |>---(7)-- Authorization Code ---------'      |
+    |  Client |          & Redirect URI                     |
+    |         |                                             |
+    |         |<---(8)----- Access Token -------------------'
+    +---------+       (w/ Optional Refresh Token)
+
+        ]]>
+      </artwork>
+
+      <t>
       The view endpoint of the resource helper is a web page the authorization server can link to, which is specialized in displaying
       an access token scope for the resource owner to understand.
       It SHOULD take 'scope', 'actions', 'redirect_uri', and optionally 'state' as its parameters.
@@ -122,27 +169,85 @@
 
     <section>
       <name>Picking Access Token Scopes</name>
-      <t>The issued access token scope may be different from the one requested by the client,
+      <t>
+      The issued access token scope may be different from the one requested by the client,
       based on the authorization server policy or the resource owner's instructions.
       To allow the resource owner to instruct the authorization server to grant a smaller, larger,
       or different access token scope than what the client requested, especially in the case
       where the client only specified the requested scope in generic terms, or not at all,
       the requirements for viewing access token scopes need to be augmented with a requirement to allow
       the user to select, deselect, and browse specific aspects of it.
-      </t><t>
+      </t>
+      <t>
       In some use cases, a client may generically ask for access to "a photo" or "a folder",
       without specifying a specific one, and the resource owner may have a chance to browse through a
       photo collection or a folder tree to select a specific one. Here too, each time the
       functionalities of the resource server change, the resource browser interface may also need to change.
-      </t><t>
+      </t>
+      <t>
+      The redirect to the pick endpoint can be embedded in the authorization code flow similarly to the view endpoint.
+      The Authorization Server can redirect the
+      user to the Resource Helper to pick the access token scope before continuing.
+      Note the additional step (5) in which the Resource Helper calls the Resource Registration Endpoint of the Authorization Server.
+      </t>
+      <artwork type="ascii-art">
+        <![CDATA[
+    +-------------+
+    |  Resource   |
+    |    Owner    |
+    +-------------+
+        ^      ^
+        |      |
+        |      |
+    +---|------|-+
+    |   |      | |                                  +---------------+
+    |   |    .-+----------------------------------->|   Resource    |
+    |   |    | '-------(4)-- User picks scope ----->|    Helper     |
+    |   |    |  .------(6)-- Redirect back to AS --<|               |
+    |   |    |  | |                                 +---------------+
+    |   |    |  | |                                        |
+    |   |    |  | |                                       (5) Register
+    |   |    |  | |                                        |  Resource
+    |   |    |  | |                                        v
+    |   |    |  | |                                 +---------------+
+    |   |    |  '---------------------------------->|               |
+    |   |    |    |                                 |               |
+    |   |    '---------(3)-- Redirect to RH -------<|               |
+    |   |         |                                 |               |
+    |   |         |          Client Identifier      |               |
+    | .-+--------------(1)-- & Redirect URI ------->|               |
+    | | |         |                                 |               |
+    | | '--------------(2)-- User authenticates --->|               |
+    | | User-     |                                 | Authorization |
+    | | Agent     |                                 |     Server    |
+    | |           |                                 |               |
+    | |       .--------(7)-- Authorization Code ---<|               |
+    +-|--   --|---+                                 +---------------+
+      |    |                                         ^      v
+      |    |                                         |      |
+      ^    v                                         |      |
+    +---------+                                      |      |
+    |         |>---(8)-- Authorization Code ---------'      |
+    |  Client |          & Redirect URI                     |
+    |         |                                             |
+    |         |<---(9)----- Access Token -------------------'
+    +---------+       (w/ Optional Refresh Token)
+
+        ]]>
+      </artwork>
+
+      <t>
       The pick endpoint of the resource helper takes the same parameters as the view endpoint,
       but SHOULD allow the user to influence the details of the scope.
       Example:
-      </t><t>
+      </t>
+      <t>
       https://pick.example.org/?scope=webdav-folder&amp;action=grant%20reject&amp;redirect_uri=https%3A%2F%2Fexample.org%2Fcontinue&amp;state=xyz
-      </t><t>
+      </t>
+      <t>
       After allowing the user to pick a fine-grained access scope, they might be redirected back to the main authorization server with for instance:
-      </t><t>
+      </t>
+      <t>
       https://example.org/continue?scope=/home/john/pictures/4:write&amp;action=grant&amp;state=xyz
       </t>
     </section>
